@@ -218,12 +218,12 @@ class ASpider:
         df_data = pd.DataFrame()
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
-
-        try:
-            input_data = pd.read_excel(f'./data/{input_file_name}')
-        except FileNotFoundError:
-            self.logger.warning(f'Not found file in data/{input_file_name}')
-            input_data = pd.DataFrame()
+        input_data = pd.read_excel(f'./data/{input_file_name}')
+        # try:
+        #     input_data = pd.read_excel(f'./data/{input_file_name}')
+        # except FileNotFoundError:
+        #     self.logger.warning(f'Not found file in data/{input_file_name}')
+        #     input_data = pd.DataFrame()
         
         if len(input_data) > 0:
             first_row = True
