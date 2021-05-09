@@ -220,7 +220,7 @@ class ASpider:
         self.logger.info(f'Begin to read file {input_file_name}')
 
         try:
-            input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
+            input_data = pd.read_excel(f'./data/{input_file_name}')
         except FileNotFoundError:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = pd.DataFrame()
@@ -308,7 +308,7 @@ class ASpider:
         self.logger.info(f'Begin to read file {input_file_name}')
         try:
             input_data = pd.read_excel(f'./data/{input_file_name}')
-        except:
+        except FileNotFoundError:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = 0
         
@@ -473,7 +473,7 @@ class ASpider:
         try:
             df_1 = pd.read_excel(f'./data/{file_output_name_1}')
             file_ok = True
-        except:
+        except FileNotFoundError:
             file_ok = False
         
         if file_ok:
