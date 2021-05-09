@@ -8,7 +8,7 @@ import sys
 from . import ahrefs_pages
 from . import ahrefs_xpath
 from .browser import set_selenium_session
-from .utils import random_sleep, load_cookie, save_cookie
+from .utils import random_sleep, load_cookie, save_cookie, check_and_create_file
 from .ahref_helpers import scrape_backlinks, scrape_batch_analysis
 
 from selenium.webdriver.common.by import By
@@ -185,6 +185,8 @@ class ASpider:
         logger.setLevel(logging.DEBUG)
         # log name and format
         general_log = "{}general.log".format(self.logfolder)
+        check_and_create_file(general_log)
+        
         file_handler = logging.FileHandler(general_log)
         # log rotation, 5 logs with 10MB size each one
         file_handler = RotatingFileHandler(

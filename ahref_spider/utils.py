@@ -1,6 +1,7 @@
 import random
 import time
 import pickle
+import os
 
 from sys import exit as clean_exit
 from contextlib import contextmanager
@@ -118,3 +119,9 @@ def save_cookie(browser, username, logger):
     cookie_file_path = f'assets/cookies/{username}.pkl'
     pickle.dump(browser.get_cookies() , open(cookie_file_path,"wb"))
     logger.info(f'Saved cookie file at {cookie_file_path}')
+
+def check_and_create_file(file_path):
+    if os.path.isfile(file_path) is not True:
+        f = open(file_path, "x")
+        f.close()
+    

@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options as Firefox_Options
+from .utils import check_and_create_file
 
 def set_selenium_session(
     proxy_address,
@@ -70,7 +71,8 @@ def set_selenium_session(
 
     # geckodriver log in specific user logfolder
     geckodriver_log = "{}geckodriver.log".format(logfolder)
-
+    check_and_create_file(geckodriver_log)
+    
     browser = webdriver.Firefox(
         firefox_profile=firefox_profile,
         executable_path=geckodriver_path,
