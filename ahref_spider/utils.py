@@ -130,5 +130,4 @@ def check_and_create_file(file_path):
                 raise
     if os.path.isfile(file_path) is not True:
         f = open(file_path, "w")
-        f.close()
     
