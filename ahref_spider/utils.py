@@ -2,6 +2,7 @@ import random
 import time
 import pickle
 import os
+import errno
 
 from sys import exit as clean_exit
 from contextlib import contextmanager
@@ -121,6 +122,12 @@ def save_cookie(browser, username, logger):
     logger.info(f'Saved cookie file at {cookie_file_path}')
 
 def check_and_create_file(file_path):
+    if not os.path.exists(os.path.dirname(file_path)):
+        try:
+            os.makedirs(os.path.dirname(file_path))
+        except OSError as exc: # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
     if os.path.isfile(file_path) is not True:
         f = open(file_path, "w")
         f.close()
