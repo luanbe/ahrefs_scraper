@@ -6,7 +6,7 @@ PASSWORD = "Zipphong18091987@@"
 
 # Show the web browser when running script
 # True: Not show | False: Show
-BROWSER_IN_BACKGROUND = False
+BROWSER_IN_BACKGROUND = True
 
 # Search backlink
 SEARCH_BACKLINK_PROTOCOL = None # None: both | http | https
