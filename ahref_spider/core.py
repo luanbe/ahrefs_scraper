@@ -186,7 +186,7 @@ class ASpider:
         # log name and format
         general_log = "{}general.log".format(self.logfolder)
         check_and_create_file(general_log)
-        
+
         file_handler = logging.FileHandler(general_log)
         # log rotation, 5 logs with 10MB size each one
         file_handler = RotatingFileHandler(
@@ -219,7 +219,7 @@ class ASpider:
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         try:
-            input_data = pd.read_excel(f'data/{input_file_name}')
+            input_data = pd.read_excel(f'./data/{input_file_name}')
         except:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = pd.DataFrame()
@@ -306,7 +306,7 @@ class ASpider:
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         try:
-            input_data = pd.read_excel(f'data/{input_file_name}')
+            input_data = pd.read_excel(f'./data/{input_file_name}')
         except:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = 0
@@ -470,14 +470,14 @@ class ASpider:
 
     def merge_data(self, file_output_name_1, file_output_name_2, file_output_name_3):
         try:
-            df_1 = pd.read_excel(f'data/{file_output_name_1}')
+            df_1 = pd.read_excel(f'./data/{file_output_name_1}')
             file_ok = True
         except:
             file_ok = False
         
         if file_ok:
             self.logger.info(f'Starting to merge two file {file_output_name_1} and {file_output_name_2}')
-            df_2 = pd.read_excel(f'data/{file_output_name_2}')
+            df_2 = pd.read_excel(f'./data/{file_output_name_2}')
             result = df_1.append(df_2)
 
             result.drop("Unnamed: 0", inplace=True, axis=1)
