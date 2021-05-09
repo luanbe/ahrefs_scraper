@@ -6,7 +6,7 @@ import re
 if __name__ == '__main__':
     file_path = f'data/{settings.OUTPUT_3_FILE_NAME}'
     try:
-        df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path, engine='openpyxl')
         
         # remove duplicate URLs from the column named “Referring Page URL”
         df = df.drop_duplicates(subset=['Target'])

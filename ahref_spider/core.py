@@ -219,13 +219,11 @@ class ASpider:
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         
-        input_data = pd.read_excel(f'./data/{input_file_name}')
-
-        # try:
-        #     input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
-        # except FileNotFoundError:
-        #     self.logger.warning(f'Not found file in data/{input_file_name}')
-        #     input_data = pd.DataFrame()
+        try:
+            input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
+        except FileNotFoundError:
+            self.logger.warning(f'Not found file in data/{input_file_name}')
+            input_data = pd.DataFrame()
         
         if len(input_data) > 0:
             first_row = True
@@ -309,7 +307,7 @@ class ASpider:
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         try:
-            input_data = pd.read_excel(f'./data/{input_file_name}')
+            input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
         except FileNotFoundError:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = 0
@@ -473,14 +471,14 @@ class ASpider:
 
     def merge_data(self, file_output_name_1, file_output_name_2, file_output_name_3):
         try:
-            df_1 = pd.read_excel(f'./data/{file_output_name_1}')
+            df_1 = pd.read_excel(f'./data/{file_output_name_1}', engine='openpyxl')
             file_ok = True
         except FileNotFoundError:
             file_ok = False
         
         if file_ok:
             self.logger.info(f'Starting to merge two file {file_output_name_1} and {file_output_name_2}')
-            df_2 = pd.read_excel(f'./data/{file_output_name_2}')
+            df_2 = pd.read_excel(f'./data/{file_output_name_2}', engine='openpyxl')
             result = df_1.append(df_2)
 
             result.drop("Unnamed: 0", inplace=True, axis=1)
