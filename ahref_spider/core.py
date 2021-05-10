@@ -4,6 +4,7 @@ import re
 import time
 import pandas as pd
 import sys
+import os
 
 from . import ahrefs_pages
 from . import ahrefs_xpath
@@ -33,6 +34,7 @@ class ASpider:
         action_delay: tuple = (1,3),
         request_delay: tuple = (1,2),
         batch_analysis_limit: int = 200,
+        save_data_limit: int = 100,
         show_logs: bool = True,
         user_agent: str = None,
         proxy_address: str = None,
@@ -47,6 +49,7 @@ class ASpider:
         self.action_delay = action_delay
         self.request_delay = request_delay
         self.batch_analysis_limit = batch_analysis_limit
+        self.save_data_limit = save_data_limit
         self.proxy_address = proxy_address
         self.proxy_port = proxy_port
         self.proxy_username = proxy_username
@@ -215,89 +218,94 @@ class ASpider:
         return logger
 
     def search_backlinks(self, input_file_name, output_file_name, protocol=None, index_mode=None):
-        df_data = pd.DataFrame()
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         
         try:
             input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
+            if input_data.get('BL Status') is None:
+                input_data['BL Status'] = None
+                input_data['Total BL'] = None
         except FileNotFoundError:
             self.logger.warning(f'Not found file in data/{input_file_name}')
-            input_data = pd.DataFrame()
         
         if len(input_data) > 0:
-            first_row = True
             self.logger.info(f'Scraper begin to crawl backlink data...')
-            for row in input_data.values.tolist():
-                url = row[0]
+            save_count = 0
+            count_backlink = 0
+            for ind in input_data.index:
+                url = input_data['Urls'][ind]
                 # Remove ULR protocol
                 url = re.sub(r'^https?\:\/\/?', '', url)
-            
-                # Choose protocol
-                if protocol:
-                    if protocol != 'http':
-                        protocol = 'http://'
-                    elif protocol != 'https':
-                        protocol = 'https://'
+                if input_data['BL Status'][ind] is None or pd.isna(input_data['BL Status'][ind]) is True:
+                    # Choose protocol
+                    if protocol:
+                        if protocol != 'http':
+                            protocol = 'http://'
+                        elif protocol != 'https':
+                            protocol = 'https://'
+                        else:
+                            protocol = ''
                     else:
                         protocol = ''
-                else:
-                    protocol = ''
 
-                # Choose index mode
-                if index_mode:
-                    if index_mode == 'e':
-                        mode = 'exact'
-                    elif index_mode == 'p':
-                        mode = 'prefix'
-                    elif index_mode == 'd':
-                        mode = 'domain'
+                    # Choose index mode
+                    if index_mode:
+                        if index_mode == 'e':
+                            mode = 'exact'
+                        elif index_mode == 'p':
+                            mode = 'prefix'
+                        elif index_mode == 'd':
+                            mode = 'domain'
+                        else:
+                            mode = 'subdomains'
                     else:
                         mode = 'subdomains'
-                else:
-                    mode = 'subdomains'
 
-                result = scrape_backlinks(url, self.username, self.user_agent, self.logger, protocol=protocol, mode=mode, request_deplay=self.request_delay)
-                self.logger.info(f'Starting to crawl url {url}')
-                if result:
-                    for data in result:
-                        # print(data)
-                        if first_row == True:
-                            for key, value in data.items():
-                                df_data[key] = value
+                    if save_count == 0:
+                        if os.path.isfile(f'data/{output_file_name}'):
+                            df_data = pd.read_excel(f'data/{output_file_name}', engine='openpyxl')
                         else:
-                            rows = [
-                                data['Total Backlinks'],
-                                data['Domain Rating'],
-                                data['URL Rating'],
-                                data['Ref domains Dofollow'],
-                                data['Target'],
-                                data['Referring Page Title'],
-                                data['Internal Links Count'],
-                                data['Backlinks Text'],
-                                data['Link URL'],
-                                data['TextPre'],
-                                data['Link Anchor'],
-                                data['TextPost'],
-                                data['Type'],
-                                data['Backlink Status'],
-                                data['First Seen'],
-                                data['Last Check'],
-                                data['Day Lost'],
-                                data['Language'],
-                                data['Traffic'],
-                                data['Keywords'],
-                                data['Js rendered'],
-                                data['Linked Domains']
-                            ]
-                            length = len(df_data)
-                            df_data.loc[length] = rows
-                        first_row = False
-            if len(df_data) > 0:
-                df_data.to_excel(f'data/{output_file_name}')
-                self.logger.info(f'Completed to scrape data with {length} backlinks and exported to data/{output_file_name}')
-            else:
-                self.logger.info(f'Not found backlink data from urls in file {input_file_name}')
+                            df_data = pd.DataFrame()
+                    result = scrape_backlinks(url, self.username, self.user_agent, self.logger, protocol=protocol, mode=mode, request_deplay=self.request_delay)
+                    self.logger.info(f'Input position: {ind + 1}| Crawling URL: {url}')
+                    if result:
+                        for data in result:
+                            rows_data = []
+                            for key, value in data.items():
+                                if df_data.get(key) is None:
+                                    df_data[key] = value
+                                else:
+                                    rows_data.append(value)
+                            
+                            if rows_data:
+                                df_data.loc[len(df_data)] = rows_data
+                                count_backlink += 1
+                       
+                        if save_count == self.save_data_limit:
+                            df_data.to_excel(f'data/{output_file_name}', engine='openpyxl', index=False)
+                            self.logger.info(f'Crawled {count_backlink} backlinks and save to data/{output_file_name}')
+                            
+
+                        input_data['BL Status'][ind] = 'Crawled'
+                        input_data['Total BL'][ind] = count_backlink
+
+                        if save_count == self.save_data_limit:
+                            input_data.to_excel(f'data/{input_file_name}', engine='openpyxl', index=False)
+      
+                    else:
+                        input_data['BL Status'][ind] = 'Crawled'
+                        input_data['Total BL'][ind] = 0
+                        if save_count == self.save_data_limit:
+                            input_data.to_excel(f'data/{input_file_name}', engine='openpyxl', index=False)
+                    if save_count == self.save_data_limit:
+                        save_count = 0
+                        count_backlink = 0
+                    else:
+                        save_count += 1
+                else:
+                    self.logger.info(f'Crawled URL: {url}')
+                    
         else:
             self.logger.warning(f'Not found rows in your file Excel. Please add data and run script again')
 
@@ -315,7 +323,6 @@ class ASpider:
         index_currently = 0
         index_end = limit
         if len(input_data) > 0:
-            first_row = True
             while True:
                
                 # find data with first and end data
@@ -409,40 +416,16 @@ class ASpider:
                         result = scrape_batch_analysis(self.browser.page_source, self.logger)
                         if result:
                             for data in result:
-                                # print(data)
-                                if first_row == True:
-                                    for key, value in data.items():
+                                rows_data = []
+                                for key, value in data.items():
+                                    if df_data.get(key) is None:
                                         df_data[key] = value
-                                else:
-                                    rows = [
-                                        data['Target'],
-                                        data['Mode'],
-                                        data['IP'],
-                                        data['Keywords'],
-                                        data['Traffic'],
-                                        data['URL Rating'],
-                                        data['Domain Rating'],
-                                        data['Ahrefs Rank'],
-                                        data['Ref domains Dofollow'],
-                                        data['Dofollow'],
-                                        data['Ref domains Governmental'],
-                                        data['Ref domains Educational'],
-                                        data['Ref IPs'],
-                                        data['Ref SubNets'],
-                                        data['Linked Domains'],
-                                        data['Total Backlinks'],
-                                        data['Backlinks Text'],
-                                        data['Backlinks NoFollow'],
-                                        data['Backlinks Redirect'],
-                                        data['Backlinks Image'],
-                                        data['Backlinks Frame'],
-                                        data['Backlinks Form'],
-                                        data['Backlinks Governmental'],
-                                        data['Backlinks Educational'],
-                                    ]
-                                    length = len(df_data)
-                                    df_data.loc[length] = rows
-                                first_row = False
+                                    else:
+                                        rows_data.append(value)
+                                
+                                if rows_data:
+                                    df_data.loc[len(df_data)] = rows_data
+    
                     except TimeoutException:
                         self.logger.info(f'Ahrefs Batch Analysis didn\'t showed backlinks')
                         break
@@ -458,8 +441,8 @@ class ASpider:
                 index_end += limit
 
             if len(df_data) > 0:
-                df_data.to_excel(f'data/{output_file_name}')
-                self.logger.info(f'Completed to scrape data with {length} backlinks and exported to data/{output_file_name}')
+                df_data.to_excel(f'data/{output_file_name}', engine='openpyxl', index=False)
+                self.logger.info(f'Completed to scrape data with {len(df_data)} backlinks and exported to data/{output_file_name}')
                 return True
             else:
                 self.logger.info(f'Not found backlink data from urls in file {input_file_name}')
@@ -480,9 +463,7 @@ class ASpider:
             self.logger.info(f'Starting to merge two file {file_output_name_1} and {file_output_name_2}')
             df_2 = pd.read_excel(f'./data/{file_output_name_2}', engine='openpyxl')
             result = df_1.append(df_2)
-
-            result.drop("Unnamed: 0", inplace=True, axis=1)
-            result.to_excel(f'data/{file_output_name_3}')
+            result.to_excel(f'data/{file_output_name_3}', engine='openpyxl', index=False)
 
             self.logger.info(f'Completed to merge files and output to file {file_output_name_3}')
         else:

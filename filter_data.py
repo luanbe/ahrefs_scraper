@@ -51,8 +51,7 @@ if __name__ == '__main__':
         print('Complete to remove URLs with a query string have more than 20 characters')
         print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         output_file_path = f'data/{settings.OUTPUT_4_FILE_NAME}'
-        df.drop("Unnamed: 0", inplace=True, axis=1)
-        df.to_excel(output_file_path)
+        df.to_excel(output_file_path, engine='openpyxl', index=False)
         print(f'Complete to filter data and export to file {output_file_path}')
     except FileNotFoundError:
         print(f'Not found file in {file_path}')

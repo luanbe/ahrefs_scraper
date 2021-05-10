@@ -46,6 +46,7 @@ def scrape_backlinks(url, username, user_agent, logger, *args, **kwargs):
         'x-requested-with': 'XMLHttpRequest'
     }
     current_page = 1
+    first = True
     while True:
         # Query URL
         query_url = f'https://ahrefs.com/site-explorer/backlinks/v7/external-similar-links/{mode}/live/en/all/dofollow/{current_page}/ahrefs_rank_desc?target={protocol}{url}'
@@ -53,11 +54,11 @@ def scrape_backlinks(url, username, user_agent, logger, *args, **kwargs):
         rows = r.json()
         current_page = int(rows['pager']['currentPage'])
         total_pages = int(rows['pager']['totalPages'])
+        logger.info(f'Crawling data...in page: {current_page}')
 
         if rows.get('result'):
-            total_rows = rows['totalRows']
-            logger.info(f'Find {total_rows} backlinks in Ahrefs database.')
-            logger.info(f'Starting to scrape data...')
+            if first:
+                logger.info(f'Find backlinks in Ahrefs|No. Pages: {total_pages}')
             for row in rows['result']:
                 yield {
                     'Total Backlinks': row['TotalBacklinks'],
@@ -84,7 +85,7 @@ def scrape_backlinks(url, username, user_agent, logger, *args, **kwargs):
                     'Linked Domains': row['linked_root_domains'],
                 }
         else:
-            logger.info(f'Not found backlink data in URL: {url}')
+            logger.info(f'Not found backlinks in URL: {url}')
             break
             return False
         
@@ -95,6 +96,8 @@ def scrape_backlinks(url, username, user_agent, logger, *args, **kwargs):
             break
         else:
             current_page += 1
+        
+        first = False
 
 def scrape_batch_analysis(source, logger):
     parse_only = SoupStrainer(id='batch_data_container')
