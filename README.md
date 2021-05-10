@@ -5,6 +5,9 @@
 - Then merge output-1.xls and output-2.xls to one file >> output-3.xls
 - The third script will take output-3.xls and will generate the output file output-4.xls
 
+# Video demo
+Youtube link: https://youtu.be/wS5VYGrA1i4
+
 # Guides on how to run your script
 ################################################
 
