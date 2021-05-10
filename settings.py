@@ -1,8 +1,8 @@
 # Your username's Ahrefs 
-USERNAME = "luan@techrius.com"
+USERNAME = ""
 
 # Your password's Ahrefs 
-PASSWORD = "Zipphong18091987@@"
+PASSWORD = ""
 
 # Show the web browser when running script
 # True: Not show | False: Show
