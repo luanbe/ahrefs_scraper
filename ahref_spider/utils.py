@@ -131,3 +131,7 @@ def check_and_create_file(file_path):
     if os.path.isfile(file_path) is not True:
         f = open(file_path, "w")
     
+def save_excel(df, file_path, logger=None, message=None):
+    df.to_excel(file_path, engine='openpyxl', index=False)
+    if message and logger:
+        logger.info(message)

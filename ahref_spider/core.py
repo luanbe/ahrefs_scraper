@@ -9,7 +9,7 @@ import os
 from . import ahrefs_pages
 from . import ahrefs_xpath
 from .browser import set_selenium_session
-from .utils import random_sleep, load_cookie, save_cookie, check_and_create_file
+from .utils import random_sleep, load_cookie, save_cookie, check_and_create_file, save_excel
 from .ahref_helpers import scrape_backlinks, scrape_batch_analysis
 
 from selenium.webdriver.common.by import By
@@ -44,6 +44,7 @@ class ASpider:
         headless_browser: bool = True,
         disable_image_load: bool = False,
         geckodriver_log_level: str = "info",  # "info" by default
+        folder_data: str = 'data'
     ):
         self.page_delay = page_delay
         self.action_delay = action_delay
@@ -58,6 +59,7 @@ class ASpider:
         self.disable_image_load = disable_image_load
         self.geckodriver_log_level = geckodriver_log_level
         self.show_logs = show_logs
+        self.folder_data = 'data/'
 
 
         if username is None:
@@ -222,7 +224,7 @@ class ASpider:
         self.logger.info(f'Begin to read file {input_file_name}')
         
         try:
-            input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
+            input_data = pd.read_excel(self.folder_data + input_file_name, engine='openpyxl')
             if input_data.get('BL Status') is None:
                 input_data['BL Status'] = None
                 input_data['Total BL'] = None
@@ -230,13 +232,24 @@ class ASpider:
             self.logger.warning(f'Not found file in data/{input_file_name}')
         
         if len(input_data) > 0:
+            if len(input_data) < self.save_data_limit:
+                self.save_data_limit = round(len(input_data) / 3)
+
             self.logger.info(f'Scraper begin to crawl backlink data...')
             save_count = 0
             count_backlink = 0
+            last_index = len(input_data) - 1
             for ind in input_data.index:
                 url = input_data['Urls'][ind]
                 # Remove ULR protocol
                 url = re.sub(r'^https?\:\/\/?', '', url)
+
+                if save_count == 0:
+                    if os.path.isfile(f'data/{output_file_name}'):
+                        df_data = pd.read_excel(f'data/{output_file_name}', engine='openpyxl')
+                    else:
+                        df_data = pd.DataFrame()
+
                 if input_data['BL Status'][ind] is None or pd.isna(input_data['BL Status'][ind]) is True:
                     # Choose protocol
                     if protocol:
@@ -262,14 +275,11 @@ class ASpider:
                     else:
                         mode = 'subdomains'
 
-                    if save_count == 0:
-                        if os.path.isfile(f'data/{output_file_name}'):
-                            df_data = pd.read_excel(f'data/{output_file_name}', engine='openpyxl')
-                        else:
-                            df_data = pd.DataFrame()
+                    
                     result = scrape_backlinks(url, self.username, self.user_agent, self.logger, protocol=protocol, mode=mode, request_deplay=self.request_delay)
                     self.logger.info(f'Input position: {ind + 1}| Crawling URL: {url}')
                     if result:
+                        count_bl_loop = 0
                         for data in result:
                             rows_data = []
                             for key, value in data.items():
@@ -281,31 +291,34 @@ class ASpider:
                             if rows_data:
                                 df_data.loc[len(df_data)] = rows_data
                                 count_backlink += 1
+                                count_bl_loop += 1
                        
-                        if save_count == self.save_data_limit:
-                            df_data.to_excel(f'data/{output_file_name}', engine='openpyxl', index=False)
-                            self.logger.info(f'Crawled {count_backlink} backlinks and save to data/{output_file_name}')
-                            
+                        if save_count == self.save_data_limit or ind == last_index:
+                            save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Crawled {count_backlink} backlinks and save to data/{output_file_name}')
 
                         input_data['BL Status'][ind] = 'Crawled'
-                        input_data['Total BL'][ind] = count_backlink
+                        input_data['Total BL'][ind] = count_bl_loop
 
-                        if save_count == self.save_data_limit:
-                            input_data.to_excel(f'data/{input_file_name}', engine='openpyxl', index=False)
+                        if save_count == self.save_data_limit or ind == last_index:
+                            save_excel(input_data, self.folder_data + input_file_name)
       
                     else:
                         input_data['BL Status'][ind] = 'Crawled'
                         input_data['Total BL'][ind] = 0
-                        if save_count == self.save_data_limit:
-                            input_data.to_excel(f'data/{input_file_name}', engine='openpyxl', index=False)
-                    if save_count == self.save_data_limit:
-                        save_count = 0
-                        count_backlink = 0
-                    else:
-                        save_count += 1
+                        if save_count == self.save_data_limit or ind == last_index:
+                            save_excel(input_data, self.folder_data + input_file_name)
                 else:
                     self.logger.info(f'Crawled URL: {url}')
-                    
+                    if ind == last_index:
+                            save_excel(input_data, self.folder_data + input_file_name)
+                            save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Crawled {count_backlink} backlinks and save to data/{output_file_name}')
+
+
+                if save_count == self.save_data_limit:
+                    save_count = 0
+                    count_backlink = 0
+                else:
+                    save_count += 1
         else:
             self.logger.warning(f'Not found rows in your file Excel. Please add data and run script again')
 
@@ -441,8 +454,7 @@ class ASpider:
                 index_end += limit
 
             if len(df_data) > 0:
-                df_data.to_excel(f'data/{output_file_name}', engine='openpyxl', index=False)
-                self.logger.info(f'Completed to scrape data with {len(df_data)} backlinks and exported to data/{output_file_name}')
+                save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Completed to scrape data with {len(df_data)} backlinks and exported to data/{output_file_name}')
                 return True
             else:
                 self.logger.info(f'Not found backlink data from urls in file {input_file_name}')
@@ -463,8 +475,6 @@ class ASpider:
             self.logger.info(f'Starting to merge two file {file_output_name_1} and {file_output_name_2}')
             df_2 = pd.read_excel(f'./data/{file_output_name_2}', engine='openpyxl')
             result = df_1.append(df_2)
-            result.to_excel(f'data/{file_output_name_3}', engine='openpyxl', index=False)
-
-            self.logger.info(f'Completed to merge files and output to file {file_output_name_3}')
+            save_excel(result, self.folder_data + file_output_name_3, self.logger, f'Completed to merge files and output to file {file_output_name_3}')
         else:
             self.logger.warning(f'Not found file in data/{file_output_name_1}')
