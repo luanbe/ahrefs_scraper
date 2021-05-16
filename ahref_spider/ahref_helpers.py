@@ -104,36 +104,37 @@ def scrape_batch_analysis(source, logger):
     soup = BeautifulSoup(source, 'lxml', parse_only=parse_only)
     if soup.text:
         tbody = soup.find('tbody')
-        list_tr = tbody.find_all('tr')
+        if tbody:
+            list_tr = tbody.find_all('tr')
         
-        for tr in list_tr:
-            td = tr.find_all('td')
-            yield {
-                'Target': td[0].find('a')['href'],
-                'Mode': td[1].text.strip(),
-                'IP': td[2].text.strip(),
-                'Keywords': td[3].text.strip(),
-                'Traffic': td[4].text.strip(),
-                'URL Rating': td[5].text.strip(),
-                'Domain Rating': td[6].text.strip(),
-                'Ahrefs Rank': td[7].text.strip(),
-                'Ref domains Dofollow': td[9].text.strip(),
-                'Dofollow': td[10].text.strip(),
-                'Ref domains Governmental': td[11].text.strip(),
-                'Ref domains Educational': td[12].text.strip(),
-                'Ref IPs': td[14].text.strip(),
-                'Ref SubNets': td[15].text.strip(),
-                'Linked Domains': td[17].text.strip(),
-                'Total Backlinks': td[19].text.strip(),
-                'Backlinks Text': td[20].text.strip(),
-                'Backlinks NoFollow': td[21].text.strip(),
-                'Backlinks Redirect': td[22].text.strip(),
-                'Backlinks Image': td[23].text.strip(),
-                'Backlinks Frame': td[24].text.strip(),
-                'Backlinks Form': td[25].text.strip(),
-                'Backlinks Governmental': td[26].text.strip(),
-                'Backlinks Educational': td[27].text.strip(),
-            }
+            for tr in list_tr:
+                td = tr.find_all('td')
+                yield {
+                    'Target': td[0].find('a')['href'],
+                    'Mode': td[1].text.strip(),
+                    'IP': td[2].text.strip(),
+                    'Keywords': td[3].text.strip(),
+                    'Traffic': td[4].text.strip(),
+                    'URL Rating': td[5].text.strip(),
+                    'Domain Rating': td[6].text.strip(),
+                    'Ahrefs Rank': td[7].text.strip(),
+                    'Ref domains Dofollow': td[9].text.strip(),
+                    'Dofollow': td[10].text.strip(),
+                    'Ref domains Governmental': td[11].text.strip(),
+                    'Ref domains Educational': td[12].text.strip(),
+                    'Ref IPs': td[14].text.strip(),
+                    'Ref SubNets': td[15].text.strip(),
+                    'Linked Domains': td[17].text.strip(),
+                    'Total Backlinks': td[19].text.strip(),
+                    'Backlinks Text': td[20].text.strip(),
+                    'Backlinks NoFollow': td[21].text.strip(),
+                    'Backlinks Redirect': td[22].text.strip(),
+                    'Backlinks Image': td[23].text.strip(),
+                    'Backlinks Frame': td[24].text.strip(),
+                    'Backlinks Form': td[25].text.strip(),
+                    'Backlinks Governmental': td[26].text.strip(),
+                    'Backlinks Educational': td[27].text.strip(),
+                }
     else:
         return False
         

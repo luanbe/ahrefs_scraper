@@ -422,10 +422,10 @@ class ASpider:
 
                     # Wait data show
                     try:
-                        result_element = WebDriverWait(self.browser, 30).until(
+                        result_element = WebDriverWait(self.browser, 60).until(
                             EC.presence_of_element_located((By.XPATH, ahrefs_xpath.BA_DATA_SHOW))
                         )
-                        random_sleep(self.action_delay)
+                        self.scroll_down_to_bottom()
                         result = scrape_batch_analysis(self.browser.page_source, self.logger)
                         if result:
                             for data in result:
@@ -478,3 +478,25 @@ class ASpider:
             save_excel(result, self.folder_data + file_output_name_3, self.logger, f'Completed to merge files and output to file {file_output_name_3}')
         else:
             self.logger.warning(f'Not found file in data/{file_output_name_1}')
+
+    def scroll_down_to_bottom(self):
+        """
+        The Script Copy by: https://stackoverflow.com/questions/20986631/how-can-i-scroll-a-web-page-using-selenium-webdriver-in-python
+        """
+        SCROLL_PAUSE_TIME = 0.5
+
+        # Get scroll height
+        last_height = self.browser.execute_script("return document.body.scrollHeight")
+
+        while True:
+            # Scroll down to bottom
+            self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+            # Wait to load page
+            time.sleep(SCROLL_PAUSE_TIME)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = self.browser.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
