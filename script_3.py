@@ -20,10 +20,11 @@ if __name__ == '__main__':
             blacklist_kws = content_bls.split('\n')
             for blacklist_kw in blacklist_kws:
                 for index, rows in df.iterrows():
-                    if blacklist_kw in rows['Target']:
-                        url = rows['Target']
-                        df = df.drop(index)
-                        print(f'Remove URL {url} from blacklist keywords')
+                    if not pd.isna(rows['Target']):
+                        if blacklist_kw in rows['Target']:
+                            url = rows['Target']
+                            df = df.drop(index)
+                            print(f'Remove URL {url} from blacklist keywords')
             print('Complete to remove URL from blacklist keywords')
         except FileNotFoundError:
             print('Not found file in {blacklist_kw_file_path}')
@@ -31,23 +32,25 @@ if __name__ == '__main__':
 
         # Remove URLs that have more than 3 hyphens. Example: www.xyz.com/qwe-qwe-qwe-qwe-qwe
         for index, rows in df.iterrows():
-            hyphen_data = rows['Target'].split('-')
-            count_hyphen_data = len(hyphen_data) - 1
-            if count_hyphen_data > 3:
-                url = rows['Target']
-                df = df.drop(index)
-                print(f'Remove URL {url} have more than 3 hyphens')
+            if not pd.isna(rows['Target']):
+                hyphen_data = rows['Target'].split('-')
+                count_hyphen_data = len(hyphen_data) - 1
+                if count_hyphen_data > 3:
+                    url = rows['Target']
+                    df = df.drop(index)
+                    print(f'Remove URL {url} have more than 3 hyphens')
         print('Complete to remove URLs have more than 3 hyphens')
         print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 
         # Remove URLs that have more than 20 characters after a query string. Query sting starts with “?”.  Example: www.xyz.com/?category=sdfsdfsdf&asdasdas&asdasdasd&asdasdasd
         for index, rows in df.iterrows():
-            url = rows['Target']
-            search = re.search(r'.+\?(.+)', url)
-            if search:
-                if len(search.group(1)) > 20:
-                    df = df.drop(index)
-                    print(f'Remove URL {url} with a query string have more than 20 characters')
+            if not pd.isna(rows['Target']):
+                url = rows['Target']
+                search = re.search(r'.+\?(.+)', url)
+                if search:
+                    if len(search.group(1)) > 20:
+                        df = df.drop(index)
+                        print(f'Remove URL {url} with a query string have more than 20 characters')
         print('Complete to remove URLs with a query string have more than 20 characters')
         print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         output_file_path = f'data/{settings.OUTPUT_4_FILE_NAME}'

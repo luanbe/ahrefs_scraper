@@ -225,6 +225,8 @@ class ASpider:
         
         try:
             input_data = pd.read_excel(self.folder_data + input_file_name, engine='openpyxl')
+            
+            # Create new columns if it is not exist
             if input_data.get('BL Status') is None:
                 input_data['BL Status'] = None
                 input_data['Total BL'] = None
@@ -323,19 +325,30 @@ class ASpider:
             self.logger.warning(f'Not found rows in your file Excel. Please add data and run script again')
 
     def batch_analysis(self, input_file_name, output_file_name, protocol=None, index_mode=None, index_type=None):
-        df_data = pd.DataFrame()
         limit = self.batch_analysis_limit - 1
         # read file excel
         self.logger.info(f'Begin to read file {input_file_name}')
         try:
             input_data = pd.read_excel(f'./data/{input_file_name}', engine='openpyxl')
+            # Create new column 'Batch Analysis' if it is not exist
+            if input_data.get('Batch Analysis') is None:
+                input_data['Batch Analysis'] = None
         except FileNotFoundError:
             self.logger.warning(f'Not found file in data/{input_file_name}')
             input_data = 0
         
-        index_currently = 0
-        index_end = limit
+        for ind in input_data.index:
+            if input_data['Batch Analysis'][ind] is None or pd.isna(input_data['Batch Analysis'][ind]) is True:
+                index_currently = ind
+                break
+        
+        if index_currently > 0:
+            index_end = index_currently + limit
+        else:
+            index_end = limit
+
         if len(input_data) > 0:
+            crawled_status = False
             while True:
                
                 # find data with first and end data
@@ -343,12 +356,9 @@ class ASpider:
 
                 if len(input_rows) > 0:
                     self.logger.info(f'Starting to scrape url from {index_currently} to {index_end} batch analysis page...')
-                    new_rows = []
-                    for input_row in input_rows.values.tolist():
-                        new_rows.append(input_row[0])
 
                     # Get list urls to fill search
-                    list_urls = '\n'.join([str(url) for url in new_rows])
+                    list_urls = '\n'.join([str(url) for url in input_rows['Urls'].tolist()])
 
                     # Choose protocol
                     if protocol:
@@ -428,6 +438,12 @@ class ASpider:
                         self.scroll_down_to_bottom()
                         result = scrape_batch_analysis(self.browser.page_source, self.logger)
                         if result:
+                            
+                            try:
+                                df_data = pd.read_excel(self.folder_data + output_file_name, engine='openpyxl')
+                            except:
+                                df_data = pd.DataFrame()
+
                             for data in result:
                                 rows_data = []
                                 for key, value in data.items():
@@ -435,14 +451,20 @@ class ASpider:
                                         df_data[key] = value
                                     else:
                                         rows_data.append(value)
-                                
+
                                 if rows_data:
                                     df_data.loc[len(df_data)] = rows_data
     
                     except TimeoutException:
                         self.logger.info(f'Ahrefs Batch Analysis didn\'t showed backlinks')
                         break
+                    # Save data into output file
+                    save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Crawled data with {len(df_data)} backlinks and exported to data/{output_file_name}')
+                    # Update crawled status for input file
+                    input_rows['Batch Analysis'] = 'Crawled'
+                    save_excel(input_data,f'./data/{input_file_name}', self.logger, f'Updated status Crawled in Batch Analysis columns from {index_currently} to {index_end}')
                 else:
+                    crawled_status = True
                     self.logger.info(f'All urls in file {input_file_name} to crawled.')
                     break
 
@@ -453,12 +475,7 @@ class ASpider:
                     index_currently = index_currently + limit + 1
                 index_end += limit
 
-            if len(df_data) > 0:
-                save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Completed to scrape data with {len(df_data)} backlinks and exported to data/{output_file_name}')
-                return True
-            else:
-                self.logger.info(f'Not found backlink data from urls in file {input_file_name}')
-                return False
+            return crawled_status
         else:
             self.logger.warning(f'Not found rows in your file Excel. Please add data and run script again')
             return False
