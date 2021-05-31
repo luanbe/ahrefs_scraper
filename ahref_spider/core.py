@@ -287,14 +287,14 @@ class ASpider:
                             for key, value in data.items():
                                 if df_data.get(key) is None:
                                     df_data[key] = value
-                                else:
-                                    rows_data.append(value)
-                            
+                                rows_data.append(value)
+
                             if rows_data:
                                 df_data.loc[len(df_data)] = rows_data
-                                count_backlink += 1
-                                count_bl_loop += 1
-                       
+
+                            count_bl_loop += 1
+                            count_backlink += 1
+                            
                         if save_count == self.save_data_limit or ind == last_index:
                             save_excel(df_data, self.folder_data + output_file_name, self.logger, f'Crawled {count_backlink} backlinks and save to data/{output_file_name}')
 
@@ -449,8 +449,7 @@ class ASpider:
                                 for key, value in data.items():
                                     if df_data.get(key) is None:
                                         df_data[key] = value
-                                    else:
-                                        rows_data.append(value)
+                                    rows_data.append(value)
 
                                 if rows_data:
                                     df_data.loc[len(df_data)] = rows_data
