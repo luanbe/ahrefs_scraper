@@ -14,5 +14,3 @@ if __name__ == '__main__':
                 settings.SEARCH_BACKLINK_PROTOCOL,
                 settings.SEARCH_BACKLINK_INDEX_MODE,
             )
-        if batch_analysis:
-            session.merge_data(settings.OUTPUT_1_FILE_NAME, settings.OUTPUT_2_FILE_NAME, settings.OUTPUT_3_FILE_NAME)
